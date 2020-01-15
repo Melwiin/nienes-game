@@ -10,10 +10,16 @@ public class PlayerMovement : MonoBehaviour
 
     public Transform player;
     public Transform target;
+
     public SpriteRenderer sprite;
+    public Transform weapon;
+
+    public GameObject bullet;
 
     private bool needMov = false;
-    
+
+
+    Vector3 mousePos;
 
     private void Start()
     {
@@ -25,20 +31,37 @@ public class PlayerMovement : MonoBehaviour
         if (needMov) {
             player.position = Vector3.MoveTowards(player.position, target.position, speed * Time.deltaTime);
         }
+
+        weapon.rotation = Quaternion.AngleAxis(Mathf.Atan2(mousePos.y, mousePos.x) * Mathf.Rad2Deg - 90, Vector3.forward);
     }
 
     void Update()
     {
+        mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
         if (Input.GetMouseButtonDown(1)) { UpdateTargetPosition(); }
         else if(Input.GetMouseButton(1)) { UpdateTargetPosition(); }
+
+        if(Input.GetMouseButton(0)) {
+            Instantiate(bullet, new Vector3(weapon.position.x, weapon.position.y, 1), weapon.rotation);
+        }
 
         playerAnimator.SetBool("isMoving", needMov);
     }
 
     void UpdateTargetPosition()
     {
-        Vector3 newTargetPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        target.position = new Vector3(newTargetPosition.x, newTargetPosition.y, 1);
+        target.position = new Vector3(mousePos.x, mousePos.y, 1);
+        needMov = true;
+
+        if (target.position.x < player.position.x)
+        {
+            sprite.flipX = true;
+        }
+        else if (target.position.x > player.position.x)
+        {
+            sprite.flipX = false;
+        }
     }
 
     void OnTriggerEnter2D(Collider2D collider)
@@ -50,21 +73,11 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void OnTriggerExit2D(Collider2D collider)
+    void OnCollisionEnter2D(Collision2D collision)
     {
-
-        if (collider.gameObject.tag == "Target")
+        if(collision.gameObject.tag == "Walls")
         {
-            needMov = true;
-
-            if (target.position.x < player.position.x)
-            {
-                sprite.flipX = true;
-            }
-            else if (target.position.x > player.position.x)
-            {
-                sprite.flipX = false;
-            }
+            needMov = false;
         }
     }
 }
